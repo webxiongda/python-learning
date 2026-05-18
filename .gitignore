@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local data and generated outputs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.tmp
+.env
+
+# macOS / editor
+.DS_Store
+.obsidian/workspace.json
+
+# Project runtime data
+projects/**/output/
+projects/**/reports/
