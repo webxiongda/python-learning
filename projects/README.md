@@ -10,7 +10,8 @@
 | `chapter-20` | Python 工具库 | 未开始 | 包结构、类型注解、测试、文档 |
 | `chapter-30` | 图书馆 OOP 系统 | 未开始 | 类设计、策略模式、测试 |
 | `chapter-40` | 异步网页状态采集器 | 未开始 | asyncio、aiohttp、并发控制、错误处理 |
-| `chapter-50` | 博客 REST API | 未开始 | FastAPI、认证、CRUD、分页、数据库 |
+| `chapter-45` | FastAPI AI Chat Gateway | 未开始 | 认证、统一错误、流式响应、后台任务 |
+| `chapter-50` | AI Assistant API | 未开始 | FastAPI、AI接口封装、流式响应、任务状态、历史记录 |
 | `chapter-55` | Docker Compose 微服务 | 未开始 | 容器化、服务边界、配置、健康检查 |
 
 ## 通用交付标准

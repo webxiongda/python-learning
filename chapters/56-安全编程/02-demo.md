@@ -1,72 +1,95 @@
 # 第56章：安全编程 — Demo 篇
 
-## Demo 1：最小反馈
+## Demo 1：参数化查询和安全配置加载
 
-目标：用最短路径验证 `输入验证` 的基本行为。
+### 目标
 
-```python
-def run_demo():
-    topic = "输入验证、SQL注入防御、密钥管理"
-    result = {"topic": topic, "status": "ok"}
-    return result
+用一个最小、可运行、可修改的例子验证本章核心能力。
 
-
-if __name__ == "__main__":
-    print(run_demo())
-```
-
-运行后先确认输出结构，再替换输入数据观察变化。
-
-## Demo 2：函数化与边界
-
-目标：把演示代码改成可测试函数。
+### 示例代码
 
 ```python
-def normalize_items(items):
-    if items is None:
-        raise ValueError("items 不能为空")
-    return [str(item).strip() for item in items if str(item).strip()]
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 
+app = FastAPI()
 
-def summarize(items):
-    normalized = normalize_items(items)
-    return {"count": len(normalized), "items": normalized}
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+
+@app.post("/api/v1/chat")
+def chat(request: ChatRequest):
+    if "token" in request.message.lower():
+        raise HTTPException(status_code=400, detail={"code": "unsafe_input", "message": "输入包含敏感字段"})
+    return {"data": {"reply": f"收到：{request.message}"}, "error": None}
 ```
 
-建议至少手动验证：
+### 运行方式
 
-- 正常列表
-- 空列表
-- `None`
-- 包含空字符串或重复元素的数据
+```bash
+python demo_56.py
+```
 
-## Demo 3：接近项目的流程
+如果本章示例是配置文件或 workflow，把代码保存为对应文件后按文档命令运行。
 
-目标：把输入、处理、输出分层。
+### 观察点
+
+- 输出是否是结构化结果，而不是散乱打印。
+- 输入为空、重复或非法时是否能得到清晰反馈。
+- 哪些部分可以拆成函数并单独测试。
+
+## Demo 2：加入边界条件
+
+把 Demo 1 改造成下面的调用方式：
 
 ```python
-def load_sample_data():
-    return [" Alice ", "Bob", "", "Alice"]
+cases = [
+    "normal input",
+    "  input with spaces  ",
+    "",
+    None,
+]
 
-
-def process_data(raw_items):
-    items = normalize_items(raw_items)
-    unique_items = sorted(set(items))
-    return {"total": len(items), "unique": unique_items}
-
-
-def main():
-    data = load_sample_data()
-    report = process_data(data)
-    print(report)
-
-
-if __name__ == "__main__":
-    main()
+for case in cases:
+    try:
+        print(case, "=>", "把这里替换成 Demo 1 的核心函数调用")
+    except Exception as exc:
+        print(case, "=> ERROR:", exc)
 ```
 
-复盘问题：
+要求你能解释：
 
-- 哪些函数可以单独测试？
-- 哪些错误应该提前校验？
-- 如果输入来自文件、HTTP 或数据库，哪一层需要调整？
+- 哪些输入应该被接受。
+- 哪些输入应该抛错。
+- 错误信息是否能帮助定位问题。
+
+## Demo 3：接近项目的分层
+
+把代码拆成三层：
+
+- `load_*`：读取输入，可以来自文件、HTTP 请求或数据库。
+- `process_*`：纯业务处理，尽量只接收参数并返回结构化结果。
+- `save_*` 或 `render_*`：保存或展示结果。
+
+建议目录：
+
+```text
+projects/chapter-56/
+├── README.md
+├── src/
+│   └── main.py
+└── tests/
+    └── test_main.py
+```
+
+## 常见错误
+
+- 信任前端输入
+- 密钥提交到 Git
+- 日志记录 token 和密码
+
+## 复盘问题
+
+1. 本章 Demo 里哪个函数最值得写测试？
+2. 如果把它接到 FastAPI 路由，路由层应该只做什么？
+3. 如果后续要支持 AI 应用场景，哪些输入输出需要记录？

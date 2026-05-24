@@ -1,65 +1,94 @@
-# 第43章 项目任务：多模块博客后端
+# 第43章：Flask进阶 — 项目任务
 
-## 业务背景
+## 任务目标
 
-将第42章的书单 API 升级为一个结构更完整的博客后端。业务需求是：用户可以注册和登录，登录后才能发布文章；文章支持分类；所有接口有统一的错误响应格式。
+完成：Flask进阶 小练习：围绕 Blueprint 做一个可运行、可测试、可记录结果的模块。
 
-## 技术要求
+这个任务不是写一段孤立 Demo，而是要留下可复盘的项目证据。默认目录：
 
-使用 Blueprint + Flask-Login + Flask-SQLAlchemy 实现以下功能：
-
-### 项目结构
-
-```
-blog_app/
-├── app.py          ← 应用工厂 + 启动入口
-├── models.py       ← User + Post + Category 模型
-├── auth/
-│   └── routes.py   ← /auth/register, /auth/login, /auth/logout
-└── posts/
-    └── routes.py   ← /api/posts CRUD
+```text
+projects/chapter-43/
+├── README.md
+├── src/
+│   └── main.py
+└── tests/
+    └── test_main.py
 ```
 
-### 数据模型
+## 功能要求
+
+1. 提供一个清晰入口，可以是 CLI、脚本函数或 FastAPI 路由。
+2. 至少包含一个核心业务函数，业务函数必须返回结构化数据。
+3. 至少处理 3 类输入：正常输入、空输入、非法输入。
+4. 错误信息要能帮助定位问题。
+5. README 记录运行命令、示例输入、示例输出和复盘结论。
+
+## 最小接口设计
+
+无论你最终写 CLI 还是 API，都先把核心逻辑设计成下面这种形态：
 
 ```python
-# User: id, username, email, password_hash
-# Post: id, title, content, author_id(FK), category_id(FK), created_at
-# Category: id, name
+def validate_input(raw):
+    """校验外部输入，失败时抛出带上下文的异常。"""
+
+
+def run_business(payload):
+    """只处理业务规则，返回 dict/list/dataclass，不直接 print。"""
+
+
+def render_result(result):
+    """把结构化结果转换成人能阅读的文本或 HTTP 响应。"""
 ```
 
-### 接口要求
+这样做的目的：
 
-**认证相关（auth 蓝图，前缀 /auth）：**
-- `POST /auth/register` — 注册（username、email、password）
-- `POST /auth/login` — 登录，成功返回 `{"message": "登录成功"}`
-- `POST /auth/logout` — 注销（需要 @login_required）
+- 入口层可以替换成 CLI、FastAPI 路由或定时任务。
+- 业务层可以直接写 pytest。
+- 输出层可以记录到 README、日志或接口响应。
+- 后续接 AI 能力时，可以把 prompt、模型响应、缓存 key 和任务状态放在清晰边界内。
 
-**文章相关（posts 蓝图，前缀 /api）：**
-- `GET /api/posts` — 公开，支持 `?category=` 过滤
-- `POST /api/posts` — 需要登录，创建文章
-- `DELETE /api/posts/<id>` — 需要登录，只能删除自己的文章
+## 推荐实现步骤
 
-### 统一错误格式
+1. 在 `projects/chapter-43/README.md` 写清任务目标。
+2. 在 `src/main.py` 写最小可运行版本。
+3. 把输入校验和业务处理拆成函数。
+4. 在 `tests/test_main.py` 写 3 个测试或手动验收用例。
+5. 运行示例，把输出贴回 README。
+6. 把踩坑或不会的问题补到根目录 `mistakes.md`。
 
-所有错误响应必须使用：
-```json
-{"error": "ERROR_CODE", "message": "人类可读描述"}
-```
+## 验收清单
 
-## 验收标准
+- [ ] 可以用一条命令运行。
+- [ ] 有正常输入示例。
+- [ ] 有空输入或非法输入示例。
+- [ ] 核心逻辑不是只靠 `print`。
+- [ ] README 包含运行结果。
+- [ ] 能说明本章知识点在 FastAPI / AI 后端里的落点。
+- [ ] 至少记录一个失败案例和修复过程。
+- [ ] 至少有一个函数能被单独测试。
 
-- [ ] 使用应用工厂函数 `create_app()`
-- [ ] auth 和 posts 各为独立 Blueprint
-- [ ] Flask-SQLAlchemy 创建 User、Post、Category 三张表
-- [ ] 密码使用 `werkzeug.security.generate_password_hash` 存储
-- [ ] 未登录访问 `POST /api/posts` 返回 `401`
-- [ ] 删除他人文章返回 `403`
-- [ ] `@app.errorhandler(Exception)` 兜底处理 500 错误
-- [ ] 所有错误响应使用统一 JSON 格式
+## README 必须包含的内容
 
-## 加分项
+- `# Chapter 43 Flask进阶`
+- `## 功能说明`：用 3-5 句话说明这个项目解决什么问题。
+- `## 运行命令`：写真实命令，例如 `python src/main.py`。
+- `## 示例输入`：贴一个正常输入和一个异常输入。
+- `## 示例输出`：贴真实输出，不写“略”。
+- `## 边界处理`：说明空输入、非法输入、重复输入如何处理。
+- `## 复盘`：记录一个踩坑点、原因和修复方式。
 
-- 使用 `before_request` 记录每个请求的耗时日志
-- 注册时验证邮箱格式和密码强度（至少8位）
-- 添加文章分页：`GET /api/posts?page=1&per_page=10`
+## 扩展任务
+
+- 给核心函数补类型注解。
+- 加一个 pytest 测试文件。
+- 如果适合 Web 场景，把入口改成 FastAPI 路由。
+- 如果适合 AI 场景，补充请求日志、缓存键或任务状态字段设计。
+
+## 提交证据
+
+学习工作台里提交项目验收时，至少填写：
+
+- 项目目录：`projects/chapter-43/`
+- 运行命令。
+- 一段示例输出。
+- 一个你修过的错误或边界问题。

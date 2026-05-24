@@ -18,6 +18,11 @@ EXPECTED_CHAPTER_FILES = {
 }
 
 MILESTONE_CHAPTERS = {"10", "20", "30", "40", "50", "55"}
+FASTAPI_AI_FILES = {
+    "docs/FASTAPI-AI-FOCUS.md",
+    "projects/chapter-45/README.md",
+    "projects/chapter-50/README.md",
+}
 
 TEMPLATE_PHRASES = {
     "本章围绕",
@@ -144,6 +149,25 @@ def check_projects_workspace() -> CheckResult:
     )
 
 
+def check_fastapi_ai_focus() -> CheckResult:
+    missing = [filename for filename in sorted(FASTAPI_AI_FILES) if not (ROOT / filename).exists()]
+    content_checks = {
+        "README.md": "FastAPI + AI 应用主线",
+        "learning-goal.md": "FastAPI + AI 应用能力地图",
+        "chapters/45-FastAPI进阶/01-theory.md": "AI 应用后端",
+        "chapters/50-里程碑：AI助手API项目/04-project-task.md": "AI Assistant API",
+    }
+    for filename, phrase in content_checks.items():
+        path = ROOT / filename
+        if not path.exists() or phrase not in path.read_text(encoding="utf-8"):
+            missing.append(f"{filename}: missing phrase {phrase}")
+    return CheckResult(
+        "fastapi_ai_focus",
+        not missing,
+        "FastAPI AI focus files are present" if not missing else "; ".join(missing),
+    )
+
+
 def check_review_files() -> CheckResult:
     missing = [rel(directory / "review.md") for directory in chapter_dirs() if not (directory / "review.md").exists()]
     return CheckResult(
@@ -183,6 +207,7 @@ def run_checks() -> list[CheckResult]:
         check_review_files(),
         check_root_placeholders(),
         check_projects_workspace(),
+        check_fastapi_ai_focus(),
         check_milestone_tasks(),
         check_template_phrases(),
     ]

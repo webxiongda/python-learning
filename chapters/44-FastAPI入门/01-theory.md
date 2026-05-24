@@ -1,5 +1,20 @@
 # 第44章：FastAPI 入门
 
+## 0. Java 背景学习建议
+
+如果你已经熟悉 Java / Spring Boot，可以这样类比 FastAPI：
+
+| Spring Boot | FastAPI | 说明 |
+|-------------|---------|------|
+| Controller | Router / path operation | 处理 HTTP 请求 |
+| DTO / VO | Pydantic BaseModel | 请求和响应结构 |
+| Bean 注入 | Depends | 依赖注入，但更函数式、更轻量 |
+| Filter / Interceptor | Middleware / Dependency | 横切逻辑 |
+| ExceptionHandler | exception_handler | 统一异常响应 |
+| Swagger/OpenAPI | `/docs` / `/redoc` | 自动接口文档 |
+
+学习 FastAPI 的关键不是“再学一套 Web”，而是掌握 Python 生态如何快速封装 AI 能力：模型调用、流式返回、任务状态、文件处理、向量检索和自动化工具接口。
+
 ## 1. FastAPI 简介
 
 FastAPI 是基于 Python 类型注解的现代高性能 Web 框架，基于 Starlette（ASGI）和 Pydantic 构建。相比 Flask，它有几个核心优势：
@@ -82,6 +97,39 @@ def root():
 ```
 
 访问 `http://127.0.0.1:8000/docs` 即可看到 Swagger UI 自动文档。
+
+### AI 应用最小接口形态
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
+
+app = FastAPI(title="AI Assistant API")
+
+
+class ChatRequest(BaseModel):
+    prompt: str = Field(min_length=1, max_length=4000)
+    conversation_id: str | None = None
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    model: str
+
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(request: ChatRequest):
+    return ChatResponse(
+        answer=f"模拟回答：{request.prompt}",
+        model="mock-model",
+    )
+```
+
+这个例子体现 FastAPI 的三个核心价值：
+
+- Pydantic 自动校验请求体。
+- `response_model` 明确响应结构。
+- `/docs` 自动生成可调试 API 文档。
 
 ---
 

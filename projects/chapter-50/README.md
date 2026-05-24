@@ -1,19 +1,18 @@
-# Chapter 50 Project: 博客 REST API
+# Chapter 50 Project: AI Assistant API
 
 ## Goal
 
-实现一个完整 FastAPI 博客 API，作为第一层主线的核心验收项目。
+实现一个完整 FastAPI AI 应用后端，作为第一层主线的核心验收项目。
 
 ## Required APIs
 
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /posts`
-- `POST /posts`
-- `GET /posts/{id}`
-- `PATCH /posts/{id}`
-- `DELETE /posts/{id}`
-- `GET /users/{id}`
+- `GET /health`
+- `POST /chat`
+- `GET /chat/stream`
+- `POST /conversations`
+- `GET /conversations/{id}`
+- `POST /tasks/document-ingest`
+- `GET /tasks/{id}`
 
 ## Commands
 
@@ -25,5 +24,6 @@ python -m pytest
 ## Acceptance
 
 - `/docs` 可访问。
-- 注册、登录、文章 CRUD、分页、未授权、越权、404 都有测试。
-- 响应不泄露密码或 password hash。
+- 普通聊天、流式聊天、会话历史、任务状态、认证失败、模型超时都有测试。
+- 模型调用通过 `ModelClient` 封装，不直接写在 Router 中。
+- 响应不泄露 API Key 或模型 Key。
