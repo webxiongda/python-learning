@@ -17,10 +17,22 @@ def create_app(
     content_root: Optional[Union[str, Path]] = None,
 ) -> FastAPI:
     app = FastAPI(title="Python FastAPI Learning Workbench")
+    # 允许通过环境变量追加来源；默认放开全部，方便同一台服务器上的 Nginx 反代与本地联调
+    extra_origins = [
+        origin.strip()
+        for origin in os.environ.get("PYTHON_WORKBENCH_CORS_ORIGINS", "*").split(",")
+        if origin.strip()
+    ]
+    if "*" in extra_origins:
+        allow_origins = ["*"]
+        allow_credentials = False
+    else:
+        allow_origins = ["http://localhost:5173", "http://127.0.0.1:5173", *extra_origins]
+        allow_credentials = True
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-        allow_credentials=True,
+        allow_origins=allow_origins,
+        allow_credentials=allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )

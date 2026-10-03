@@ -19,6 +19,11 @@ from .models import User
 
 TOKEN_SECRET = os.environ.get("PYTHON_WORKBENCH_SECRET", "local-python-workbench-secret")
 
+# 免登录模式：开启后未携带 token 的请求自动落到该默认用户，而不是抛 401。
+# 业务数据全部按 user_id 隔离，所以必须落到真实用户行，不能只放行权限。
+AUTO_LOGIN_USERNAME = os.environ.get("PYTHON_WORKBENCH_AUTO_USER", "").strip()
+AUTO_LOGIN_SECRET = os.environ.get("PYTHON_WORKBENCH_AUTO_SECRET", "auto-login-placeholder-secret")
+
 
 def hash_secret(secret: str, salt: Optional[str] = None) -> str:
     salt = salt or secrets.token_hex(16)
@@ -64,16 +69,47 @@ def parse_token(token: str) -> dict:
     return payload
 
 
+def default_user(db: Session) -> User:
+    """获取（或创建）免登录模式使用的默认用户。
+
+    业务表全部按 user_id 外键关联，因此必须落到一条真实用户记录，
+    否则即使放行鉴权，下游按 user_id 查询也会拿不到数据。
+    """
+    username = AUTO_LOGIN_USERNAME or "auto_user"
+    user = db.scalar(select(User).where(User.username == username))
+    if user is not None:
+        return user
+    user = User(username=username, secret_hash=hash_secret(AUTO_LOGIN_SECRET))
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def auto_login_enabled() -> bool:
+    """默认开启免登录；设置 PYTHON_WORKBENCH_AUTO_USER=off 可关回原登录流程。"""
+    return AUTO_LOGIN_USERNAME.lower() != "off"
+
+
 def current_user(
     request: Request,
     authorization: Optional[str] = Header(default=None),
     db: Session = Depends(get_db),
 ) -> User:
     if not authorization or not authorization.startswith("Bearer "):
+        if auto_login_enabled():
+            return default_user(db)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="未登录")
-    payload = parse_token(authorization.removeprefix("Bearer ").strip())
+    try:
+        payload = parse_token(authorization.removeprefix("Bearer ").strip())
+    except HTTPException:
+        if auto_login_enabled():
+            return default_user(db)
+        raise
     user = db.scalar(select(User).where(User.id == int(payload["sub"])))
     if user is None:
+        if auto_login_enabled():
+            return default_user(db)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在")
     return user
 
