@@ -49,7 +49,10 @@ echo "免登录逻辑: $(grep -q AUTO_LOGIN_USERNAME backend/app/auth.py && echo
 echo "db 保留:    $([ -f python-workbench.db ] && echo YES || echo '❌ 缺失')"
 
 echo "=== 3. 安装后端依赖 ==="
-"$PY" -m pip install -q -r backend/requirements.txt 2>&1 | grep -v "WARNING: Running pip" | tail -3
+# 不要把 pip 输出接 `grep -v`：grep 无匹配行时返回 1，在 set -e + pipefail
+# 下会直接中断脚本，导致 dist 未重建、首页 500。
+# 这是 2026-10-03 首次自动部署的真实故障。
+"$PY" -m pip install -q -r backend/requirements.txt 2>&1 | tail -3 || true
 "$PY" -c "import fastapi, sqlalchemy, uvicorn; print('依赖 OK, fastapi', fastapi.__version__)"
 
 echo "=== 4. 构建前端 ==="
